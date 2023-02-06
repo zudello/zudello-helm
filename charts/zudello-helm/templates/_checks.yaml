@@ -1,0 +1,22 @@
+{{- define "zudello.standardChecks" -}}
+{{/*
+
+This MUST be included in all charts, using the following syntax:
+{{- include "zudello.standardChecks" . -}}
+
+*/}}
+{{- /* Standard checks ====== */}}
+{{- if ne .Release.Name .Values.repo -}}
+{{ required (print "Release Name MUST be " .Values.repo) .null }}
+{{- end -}}
+{{- if ne .Release.Namespace .Values.namespace -}}
+{{ required (print "Namespace (-n) MUST be " .Values.namespace) .null }}
+{{- end -}}
+{{- if lookup "v1" "svc" "" "" }}
+{{/* Perform check only if against a real cluster, ie, not a Template */}}
+  {{- if ne .Values.clusterName (lookup "v1" "ConfigMap" "default" "cluster-data-annotations").data.clustername -}}
+  {{ required (print "Cluster Name (" .Values.clusterName ") MUST match target cluster name (" (lookup "v1" "ConfigMap" "default" "cluster-data-annotations").data.clustername ")") .null }}
+  {{- end -}}
+{{- end -}}
+{{- /* Standard checks end ====== */}}
+{{- end -}}
