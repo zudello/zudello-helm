@@ -125,6 +125,7 @@ Full config for example:
     "dbUsernameKey" "DATABASE_USERNAME" 
     "dbPasswordKey" "DATABASE_PASSWORD"
     "dbHostnameKey" "DATABASE_HOSTNAME"
+    "dbHostnameReadOnlyKey" "DATABASE_HOSTNAME_READ_ONLY"
     "dbPortKey" "DATABASE_PORT"
     "dbEngineKey" "DATABASE_ENGINE"
 }} 
@@ -140,6 +141,7 @@ dbNameKey: The key in the secret to store the database name, default DATABASE_NA
 dbUsernameKey: The key in the secret to store the database username, default DATABASE_USERNAME
 dbPasswordKey: The key in the secret to store the database password, default DATABASE_PASSWORD
 dbHostnameKey: The key in the secret to store the database hostname, default DATABASE_HOSTNAME
+dbHostnameReadOnlyKey: The key in the secret to store the database hostname for read-only users and access, default DATABASE_HOSTNAME_READ_ONLY
 dbPortKey: The key in the secret to store the database port, default DATABASE_PORT
 dbEngineKey: The key in the secret to store the database engine (the value could be "mysql" or "postgresql"), default DATABASE_ENGINE
 dbEngineFormat: The format of the database engine names, currently "full" (default), "grafana"
@@ -169,12 +171,14 @@ The database-admin secret should have the following keys:
 {{ $dbUsernameKey := (default "DATABASE_USERNAME" .dbUsernameKey) }}
 {{ $dbPasswordKey := (default "DATABASE_PASSWORD" .dbPasswordKey) }}
 {{ $dbHostnameKey := (default "DATABASE_HOSTNAME" .dbHostnameKey) }}
+{{ $dbHostnameReadOnlyKey := (default "DATABASE_HOSTNAME_READ_ONLY" .dbHostnameReadOnlyKey) }}
 {{ $dbPortKey := (default "DATABASE_PORT" .dbPortKey) }}
 {{ $dbEngineKey := (default "DATABASE_ENGINE" .dbEngineKey) }}
 {{ $dbEngineFormat := (default "full" .dbEngineFormat) }}
 {{ $dbReadWriteUser := (eq .dbReadWriteUser true )}}
 
 {{ $dbHostName := (default "mysql-service.default.svc.cluster.local" (default "" $dbAdminSecret.data.DATABASE_HOST_READ_WRITE | b64dec)) }}
+{{ $dbHostNameReadOnly := (default "mysql-service.default.svc.cluster.local" (default "" $dbAdminSecret.data.DATABASE_HOST_READ_ONLY | b64dec)) }}
 {{ $dbPort := (default "3306" (default "" $dbAdminSecret.data.DATABASE_PORT | b64dec)) }}
 
 {{/* Validate the dbEngineFormat */}}
@@ -189,6 +193,7 @@ data:
   {{ $dbUsernameKey }}: {{ .dbUsername | b64enc }}
   {{ $dbPasswordKey }}: {{ $newdbpassword | b64enc }}
   {{ $dbHostnameKey }}: {{ $dbHostName | b64enc }}
+  {{ $dbHostnameReadOnlyKey }}: {{ $dbHostNameReadOnly | b64enc }}
   {{ $dbPortKey }}: {{ $dbPort | b64enc }}
   {{ $dbEngineKey }}: {{ (ternary (ternary "postgres" $dbEngine (eq $dbEngineFormat "grafana")) $dbEngine (eq $dbEngine "postgresql")) | b64enc }}
 kind: Secret
