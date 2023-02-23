@@ -58,6 +58,7 @@ Create a secret, generating a new value if required. An example full config
     "prefix" "base64:"
     "valueStyle" "base64"
     "valueLength" 32
+    "additionalValues" (dict "USERNAME" "admin" "HOST" "some.host.svc.cluster.local")
 }} 
 
 namespace: The namespace in which to create the secret
@@ -69,6 +70,7 @@ valueStyle: The style of the secret, default plain, can be one of:
   base64: The generated secret is base64 encoded, after it is generated to valueLength long
   plain: The generated secret is plain text, just letters and numbers
   random: The generated secret is a random string of binary data, valueLength octects long
+additionalValues: A dict of additional values to add to the secret, optional, default nothing
 
 */}}
 {{ $namespace := .namespace }}
@@ -100,6 +102,11 @@ data:
   {{ $valueKey | quote }}: {{ (print $prefix (encryptAES (randAscii 1000) (randAscii 2000) | b64dec | trunc $valueLength)) | b64enc | quote }}
 {{- else }}
 {{- fail "Unknown valueStyle: " $valueStyle }}
+{{- end }}
+{{ if .additionalValues }}
+{{- range $key, $value := .additionalValues }}
+  {{ $key | quote }}: {{ $value | b64enc | quote }}
+{{- end }}
 {{- end }}
 
 {{- end -}}{{/* if $secretCurrent */}}
