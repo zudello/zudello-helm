@@ -34,6 +34,7 @@ for compatibility with the rabbitmq messaging-topology-operator):
 - password
 - host
 - port
+- queue
 
 */}}
 {{ $namespace := required "namespace required" .namespace }}
@@ -57,6 +58,7 @@ data:
     password: {{ $newPassword | b64enc }}
     host: {{ $host | b64enc }}
     port: {{ $port | b64enc }}
+    queue: {{ $queue | b64enc }}
 metadata:
   name: {{ $secretName }}
   namespace: {{ $namespace }}
