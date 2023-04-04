@@ -196,7 +196,7 @@ Producers always also get access to the _<queue>-priority_ queue if it exists
 
 Full config for example:
 
-{{ template "zudello.createQueueAndUser" dict 
+{{ template "zudello.createProducerUser" dict 
     "namespace" .Values.namespace 
     "username" "ingestion"
     "writeQueues" (list "document-worker" "team-data")
