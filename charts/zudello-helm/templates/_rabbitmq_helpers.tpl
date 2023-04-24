@@ -15,6 +15,8 @@ Full config for example:
     "username" "ingestion"
     "priority" true
     "writeQueues" (list "document-worker" "team-data")
+    "events" (list "created.*" "*.expenses")
+    "eventsOnly" false
 }} 
 
 A secret named _<username>-user-credentials_ (eg: ingestion-user-credentials) will be 
@@ -31,6 +33,11 @@ username: Optional, the username to create, defaults to queue
 priority: Optional, if true (YAML bool), create a priority queue as well as the normal queue
     the priority queue will be named _<queue>-priority_
 writeQueues: Optional, a list of queues username can also write to
+events: Optional, a list of events to create bindings for. For more information see:
+    https://docs.google.com/document/d/1BZv1Yr3tD-uF6i5mob7tLNBxjSF-QoEcr3pr0KiMz7w/edit?usp=sharing
+eventsOnly: Optional, if true (YAML bool), only create bindings for the events, do not create
+    the queue or exchange. The queue name is still required for the internal event queues to
+    be created.
 
 The produced secret will have the following keys (note values are lowercase 
 for compatibility with the rabbitmq messaging-topology-operator):
@@ -57,6 +64,8 @@ To mount the secret, use the following in your deployment:
 {{ $username := (default .queue .username) }}
 {{ $priority := (default false .priority) }}
 {{ $writeQueues := (default (list) .writeQueues)}}
+{{ $events:= (default (list) .events)}}
+{{ $eventsOnly := (default false .eventsOnly) }}
 {{ $host := "rabbit.rabbitmq.svc.cluster.local" }}
 {{ $port := "5672" }}
 {{ $secretName := printf "%s-user-credentials" $username }}
@@ -119,16 +128,17 @@ spec:
   user: {{ $username }}
   permissions:
     {{ if $writeQueues }}
-    write: "^{{ join "|" $writePermRegex }}$"
+    write: "^{{ join "|" $writePermRegex }}|(events){{ if or $events $eventsOnly }}|(events-{{ $queue }}){{ end }}$"
     {{ else }}
-    write: ""
+    write: "^(events)$"
     {{ end }}
     configure: ""
-    read: "^({{ $queue }}){{ if $priority }}|({{ $queue }}-priority){{ end }}$"
+    read: "^({{ $queue }})|(events-{{ $queue }}){{ if $priority }}|({{ $queue }}-priority){{ end }}$"
   rabbitmqClusterReference:
     name: rabbit
     namespace: rabbitmq
 
+{{ if not $eventsOnly }}
 ---
 apiVersion: rabbitmq.com/v1beta1
 kind: Queue
@@ -174,6 +184,7 @@ spec:
   rabbitmqClusterReference:
     name: rabbit
     namespace: rabbitmq
+{{ end }} {{/* if not $eventsOnly */}}
 
 {{ if $priority }}
 ---
@@ -206,13 +217,80 @@ spec:
     name: rabbit
     namespace: rabbitmq
 
-{{ end }}
+{{ end }} {{/* if $priority */}}
+
+{{ if or $events $eventsOnly }}
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: events-{{ $queue }}
+  namespace: {{ $namespace }}
+spec:
+  name: events-{{ $queue }}
+  type: quorum
+  autoDelete: false
+  durable: true
+  rabbitmqClusterReference:
+    name: rabbit
+    namespace: rabbitmq
+
+{{ range $events }}
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Binding
+metadata:
+  name: events-{{ $queue }}-{{ (trunc 10 (sha256sum .)) }}
+  namespace: {{ $namespace }}
+spec:
+  source: events
+  destination: events-{{ $queue }}
+  destinationType: queue
+  routingKey: {{ . | quote }}
+  rabbitmqClusterReference:
+    name: rabbit
+    namespace: rabbitmq
+{{ end }} {{/* range $events */}}
+
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Exchange
+metadata:
+  name: events-{{ $queue }}
+  namespace: {{ $namespace }}
+spec:
+  name: events-{{ $queue }}
+  type: direct
+  autoDelete: false
+  durable: true
+  rabbitmqClusterReference:
+    name: rabbit
+    namespace: rabbitmq
+
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Binding
+metadata:
+  name: events-{{ $queue }}
+  namespace: {{ $namespace }}
+spec:
+  source: events-{{ $queue }}
+  destination: events-{{ $queue }}
+  destinationType: queue
+  routingKey: events-{{ $queue }}
+  rabbitmqClusterReference:
+    name: rabbit
+    namespace: rabbitmq
+
+{{ end }} {{/* if or $events $eventsOnly */}}
+
 {{ end }} {{/* ======================== End zudello.createQueueAndUser ======================== */}}
 
 {{ define "zudello.createProducerUser" -}}
 {{/*
 Create a new RabbitMQ user for a producer, with write permissions to the listed queue(s)
-Producers always also get access to the _<queue>-priority_ queue if it exists
+Producers always also get access to the _<queue>-priority_ queue if it exists, as well as
+the _events_ exchange.
 
 Full config for example:
 
@@ -298,7 +376,7 @@ spec:
   vhost: "/"
   user: {{ $username }}
   permissions:
-    write: "^{{ join "|" $writePermRegex }}$"
+    write: "^{{ join "|" $writePermRegex }}|(events)$"
     configure: ""
     read: ""
   rabbitmqClusterReference:
@@ -330,6 +408,8 @@ queueMain:
       priority: true        # Optional: If true, will also scale the <queue>-priority queue, default: false
 
 Priority queues are scaled twice as fast as the default queues.
+
+To scale on event queues, use a name of "events-<queue>", and set priority to false.
 
 The template would then be called with:
 {{ include "zudello.scaleRabbitQueue" (list .Values.queueMain .) }}
