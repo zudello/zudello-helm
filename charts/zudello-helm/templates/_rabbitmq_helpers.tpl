@@ -127,11 +127,15 @@ spec:
   vhost: "/"
   user: {{ $username }}
   permissions:
-    {{ if $writeQueues }}
-    write: "^{{ join "|" $writePermRegex }}|(events){{ if or $events $eventsOnly }}|(events-{{ $queue }}){{ end }}$"
-    {{ else }}
-    write: "^(events)$"
-    {{ end }}
+    write: "^
+      {{- if $writeQueues -}}
+        {{- join "|" $writePermRegex -}}
+        |
+      {{- end -}}
+        (events)|({{ $queue }})
+      {{- if or $events $eventsOnly -}}
+        |(events-{{ $queue }})
+      {{- end -}}$"
     configure: ""
     read: "^({{ $queue }})|(events-{{ $queue }}){{ if $priority }}|({{ $queue }}-priority){{ end }}$"
   rabbitmqClusterReference:
