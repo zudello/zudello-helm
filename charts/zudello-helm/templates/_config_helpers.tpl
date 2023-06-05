@@ -1,3 +1,24 @@
+{{- define "zudello.getTimeZone" -}}
+{{/* 
+Returns the configured timezone for the cluster.
+
+For example:
+- {{ template "zudello.getTimeZone" }}
+
+*/}}
+{{- $response := (lookup "v1" "ConfigMap" "default" "cluster-data-annotations") -}}
+{{- if not (empty $response) -}}
+    {{- $timeZone := $response.data.timeZone -}}
+    {{- if empty $timeZone -}}
+        {{- required "timeZone not set in cluster, rerun devops helm upgrade" $timeZone -}}
+    {{- end -}}
+    {{- $timeZone -}}
+{{- else -}}
+    {{- "getTimeZone dry-run not valid in production" -}}
+{{- end -}}{{/* zudello.getTimezone */}}
+{{- end -}}
+
+
 {{- define "zudello.getPinnedAZ" -}}
 {{/* 
 Returns the configured pinnedAZ for the cluster.
