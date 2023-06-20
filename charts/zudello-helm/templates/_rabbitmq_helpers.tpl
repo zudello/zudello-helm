@@ -536,7 +536,7 @@ spec:
 {{ if and $values.workingHours (gt $queue.minimumReplicas 0.0) }}
     - type: cron
       metadata:
-        timezone: {{ $values.workingHours.timezone | quote }}
+        timezone: {{ template "zudello.getTimeZone" }}
         start: {{ $values.workingHours.start | quote }}
         end: {{ $values.workingHours.end | quote }}
         desiredReplicas: {{ $queue.minimumReplicas | quote }}
