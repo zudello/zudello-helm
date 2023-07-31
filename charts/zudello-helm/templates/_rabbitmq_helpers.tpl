@@ -73,8 +73,7 @@ A liveness probe should also be created with:
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 30
-{{ end }} {{/* if .Values.developmentMode */}}
-
+{{ end }} 
 
 
 */}}
