@@ -17,6 +17,7 @@ Full config for example:
     "writeQueues" (list "document-worker" "team-data")
     "events" (list "created.*" "*.expenses")
     "eventsOnly" false
+    "configure" ""
 }} 
 
 A secret named _<username>-user-credentials_ (eg: ingestion-user-credentials) will be 
@@ -38,6 +39,8 @@ events: Optional, a list of events to create bindings for. For more information 
 eventsOnly: Optional, if true (YAML bool), only create bindings for the events, do not create
     the queue or exchange. The queue name is still required for the internal event queues to
     be created.
+configure: Optional, a regex to allow configure permissions on. If not set, no configure
+    permissions will be granted. Otherwise follows RabbitMQ configure regex rules.
 
 The produced secret will have the following keys (note values are lowercase 
 for compatibility with the rabbitmq messaging-topology-operator):
@@ -58,6 +61,22 @@ To mount the secret, use the following in your deployment:
           secret:
            secretName: <username>-user-credentials
 
+A liveness probe should also be created with:
+
+{{ if not .Values.developmentMode }}
+          livenessProbe:
+            exec:
+              command:
+              - python3
+              - -m
+              - zudello_rabbit.heartbeat
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 30
+{{ end }} {{/* if .Values.developmentMode */}}
+
+
+
 */}}
 {{ $namespace := required "namespace required" .namespace }}
 {{ $queue := required "queue name required" .queue }}
@@ -66,6 +85,7 @@ To mount the secret, use the following in your deployment:
 {{ $writeQueues := (default (list) .writeQueues)}}
 {{ $events:= (default (list) .events)}}
 {{ $eventsOnly := (default false .eventsOnly) }}
+{{ $configure := (default ("") .configure)}}
 {{ $host := "rabbit.rabbitmq.svc.cluster.local" }}
 {{ $port := "5672" }}
 {{ $secretName := printf "%s-user-credentials" $username }}
@@ -136,7 +156,7 @@ spec:
       {{- if or $events $eventsOnly -}}
         |(events-{{ $queue }})
       {{- end -}}$"
-    configure: ""
+    configure: {{ $configure | quote }}
     read: "^({{ $queue }})|(events-{{ $queue }}){{ if $priority }}|({{ $queue }}-priority){{ end }}$"
   rabbitmqClusterReference:
     name: rabbit
