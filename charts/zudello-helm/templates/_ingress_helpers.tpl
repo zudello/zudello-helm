@@ -45,6 +45,7 @@ ingressApp:
   additionalPaths:      # Additional paths to match, defaults to empty, eg:
     - "/alt-path"
     - "/another"
+  namespace:            # The namespace for this ingress, if different from the values.yaml namespace (which is used by default)
 
 The template would then be called with:
 {{ include "zudello.ingress" (list .Values.ingressApp .) }}
@@ -61,8 +62,10 @@ Implemenation note: The choice of using config in values.yaml allows each cluste
 override the values, and should rarely be needed any more.
 
 */}}
+---
 {{- $ingress:= (index . 0) -}}
 {{- $values := (index . 1).Values -}}
+{{- $namespace := default $values.namespace $ingress.namespace -}}
 {{- $path := default "/" $ingress.path -}}
 {{- $port := default "80" $ingress.port -}}
 {{- $host := default "api" $ingress.host -}}
@@ -75,7 +78,7 @@ override the values, and should rarely be needed any more.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  namespace: {{ $values.namespace | quote }}
+  namespace: {{ $namespace | quote }}
   name: {{ $ingress.name }}-ingress-{{ $values.clusterName }}
   annotations:
     kubernetes.io/ingress.class: alb
