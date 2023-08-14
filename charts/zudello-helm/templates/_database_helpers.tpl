@@ -25,7 +25,7 @@ Note, the optional values below do not need to be included in the above
 namespace: The namespace where the secret will be created
 secretName: Name of the secret to check/create in the namespace
 dbName: Name of the database to create
-dbUsername: The username in the database to create
+dbUsername: The username in the database to create, defaults to the dbName
 dbReadWriteUser: If true (YAML bool), create a read-write user, otherwise defaults to read-only
 dbNameKey: The key in the secret to store the database name, default DATABASE_NAME
 dbUsernameKey: The key in the secret to store the database username, default DATABASE_USERNAME
@@ -37,6 +37,8 @@ dbEngineKey: The key in the secret to store the database engine (the value could
 dbEngineFormat: The format of the database engine names, currently "full" (default), "grafana"
     full: mysql or postgresql
     grafana: mysql or postgres
+dbExtraCommands: Extra SQL commands to run after creating the database and user, only for Postgres. NOTE: This is passed as a shell command
+dbReset: If the string "yes", then the database will be dropped and recreated, and the user will be dropped and recreated, only for Postgres
 
 This _always_ uses the default database host at mysql-service.default.svc.cluster.local,
 and requires the admin password to be in the database-admin secret in the default namespace
@@ -50,13 +52,15 @@ The database-admin secret should have the following keys:
     DATABASE_HOST_READ_ONLY: 
     DATABASE_PORT:  (defaults to 3306)
 */}}
+{{ $dbReset := (eq .dbReset "yes" )}}
 {{- $dbpassword := (lookup "v1" "Secret" .namespace .secretName) }}
-{{- if not $dbpassword }}
+{{- if (or (not $dbpassword) $dbReset ) }}
 {{- $newdbpassword := (randAlphaNum 30) -}}
 {{ $dbAdminSecret := (lookup "v1" "Secret" "default" "database-admin") }}
 {{- if $dbAdminSecret }}{{/* Second check is here to allow for missing admin secrets, and allow --dry-run to work */}}
 
 {{ $dbEngine := (default ("mysql" | b64enc) $dbAdminSecret.data.DATABASE_ENGINE) | b64dec }}
+{{ $dbUsername := (default .dbName .dbUsername ) }}
 {{ $dbNameKey := (default "DATABASE_NAME" .dbNameKey) }}
 {{ $dbUsernameKey := (default "DATABASE_USERNAME" .dbUsernameKey) }}
 {{ $dbPasswordKey := (default "DATABASE_PASSWORD" .dbPasswordKey) }}
@@ -66,6 +70,7 @@ The database-admin secret should have the following keys:
 {{ $dbEngineKey := (default "DATABASE_ENGINE" .dbEngineKey) }}
 {{ $dbEngineFormat := (default "full" .dbEngineFormat) }}
 {{ $dbReadWriteUser := (eq .dbReadWriteUser true )}}
+{{ $dbExtraCommands := (default "" .dbExtraCommands) }}
 
 {{ $dbHostName := (default "mysql-service.default.svc.cluster.local" (default "" $dbAdminSecret.data.DATABASE_HOST_READ_WRITE | b64dec)) }}
 {{ $dbHostNameReadOnly := (default "mysql-service.default.svc.cluster.local" (default "" $dbAdminSecret.data.DATABASE_HOST_READ_ONLY | b64dec)) }}
@@ -80,7 +85,7 @@ The database-admin secret should have the following keys:
 apiVersion: v1
 data:
   {{ $dbNameKey }}: {{ .dbName | b64enc }}
-  {{ $dbUsernameKey }}: {{ .dbUsername | b64enc }}
+  {{ $dbUsernameKey }}: {{ $dbUsername | b64enc }}
   {{ $dbPasswordKey }}: {{ $newdbpassword | b64enc }}
   {{ $dbHostnameKey }}: {{ $dbHostName | b64enc }}
   {{ $dbHostnameReadOnlyKey }}: {{ $dbHostNameReadOnly | b64enc }}
@@ -132,7 +137,7 @@ spec:
             - name: DATABASE
               value: {{ .dbName | quote }}
             - name: USERNAME
-              value: {{ .dbUsername | quote }}
+              value: {{ $dbUsername | quote }}
             - name: PASSWORD
               value: {{ $newdbpassword | quote }}
             - name: DATABASE_HOSTNAME
@@ -170,7 +175,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ kebabcase .dbName }}-db-create
+  name: {{ kebabcase .dbName }}-db-{{ kebabcase .dbUsername }}-create
   namespace: "default"
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
@@ -193,11 +198,17 @@ spec:
             - name: NEW_DATABASE
               value: {{ .dbName | quote }}
             - name: NEW_USERNAME
-              value: {{ .dbUsername | quote }}
+              value: {{ $dbUsername | quote }}
             - name: NEW_PASSWORD
               value: {{ $newdbpassword }}
+            - name: EXTRA_COMMANDS
+              value: {{ $dbExtraCommands | quote }}
             {{- if $dbReadWriteUser }}
             - name: WRITE_PERMISSIONS
+              value: "true"
+            {{- end }}
+            {{- if $dbReset }}
+            - name: FULL_RESET
               value: "true"
             {{- end }}
             - name: SCRIPT
@@ -208,6 +219,12 @@ spec:
                     --echo-queries --command="$cmd" \
                     "postgresql://${USERNAME}:${PASSWORD}@${DATABASE_HOST_READ_WRITE}:${DATABASE_PORT}/${dbname}?sslmode=verify-full&sslrootcert=/database-certificate/dbcert.pem"
                 }
+
+                # If FULL_RESET is true, drop the database and user
+                if [ "${FULL_RESET}" = "true" ]; then
+                  pgexec "DROP DATABASE IF EXISTS ${NEW_DATABASE};"
+                  pgexec "DROP USER IF EXISTS \"${NEW_USERNAME}\";"
+                fi
 
                 # Create the database
                 export dbname=template1
@@ -230,6 +247,11 @@ spec:
                   pgexec "GRANT CREATE ON SCHEMA public TO \"${NEW_USERNAME}\";"
                   pgexec "GRANT CREATE ON DATABASE ${NEW_DATABASE} TO \"${NEW_USERNAME}\";"
                   pgexec "GRANT TEMPORARY ON DATABASE ${NEW_DATABASE} TO \"${NEW_USERNAME}\";"
+                fi
+
+                # Run any extra commands
+                if [ -n "${EXTRA_COMMANDS}" ]; then
+                  pgexec "${EXTRA_COMMANDS}"
                 fi
 
           envFrom:
