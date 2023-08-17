@@ -511,11 +511,17 @@ metadata:
 spec:
   scaleTargetRef:
     name: {{ $queue.name }}
+{{- if $values.developmentMode }}
+  minReplicaCount: 1
+  maxReplicaCount: 1
+{{- else }} {{/* if $values.developmentMode */}}
 {{- if $values.workingHours }}
+
   minReplicaCount: 0
 {{ else }} {{/* if $values.workingHours */}}
   minReplicaCount: {{ $queue.minimumReplicas }}
 {{- end }} {{/* if $values.workingHours */}}
+{{- end }} {{/* if $values.developmentMode */}}
   maxReplicaCount: {{ $queue.maximumReplicas }}
   advanced:
     horizontalPodAutoscalerConfig:  
