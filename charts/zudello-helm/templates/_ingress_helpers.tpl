@@ -81,14 +81,9 @@ metadata:
   namespace: {{ $namespace | quote }}
   name: {{ $ingress.name }}-ingress-{{ $values.clusterName }}
   annotations:
-    kubernetes.io/ingress.class: alb
-    alb.ingress.kubernetes.io/group.name: {{ $values.clusterName }}-elb
-    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
-    alb.ingress.kubernetes.io/load-balancer-attributes: "routing.http.drop_invalid_header_fields.enabled=true,routing.http2.enabled=true"
-    alb.ingress.kubernetes.io/ssl-redirect: '443'
-    alb.ingress.kubernetes.io/ssl-policy: 'ELBSecurityPolicy-FS-1-2-Res-2019-08'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
 {{- if $ingress.ruleOrder }}
     alb.ingress.kubernetes.io/group.order: {{ $ingress.ruleOrder | quote }}
 {{- end }}
