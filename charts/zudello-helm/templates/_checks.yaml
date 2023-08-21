@@ -19,4 +19,10 @@ This MUST be included in all charts, using the following syntax:
   {{- end -}}
 {{- end -}}
 {{- /* Standard checks end ====== */}}
+{{- /* Always copy over the cluster-details configmap ====== */}}
+{{ template "zudello.syncConfigMap" (dict
+    "srcConfigMap" "cluster-details"
+    "destNamespace" .Values.namespace
+) }}
+
 {{- end -}}
