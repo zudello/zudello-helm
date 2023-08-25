@@ -6,9 +6,9 @@ For example:
 - {{ template "zudello.getTimeZone" }}
 
 */}}
-{{- $response := (lookup "v1" "ConfigMap" "default" "cluster-data-annotations") -}}
+{{- $response := (lookup "v1" "ConfigMap" "default" "cluster-details") -}}
 {{- if not (empty $response) -}}
-    {{- $timeZone := $response.data.timeZone -}}
+    {{- $timeZone := $response.data.CLUSTER_TIMEZONE -}}
     {{- if empty $timeZone -}}
         {{- required "timeZone not set in cluster, rerun devops helm upgrade" $timeZone -}}
     {{- end -}}
