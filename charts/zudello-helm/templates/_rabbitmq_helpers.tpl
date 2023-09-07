@@ -581,3 +581,31 @@ spec:
 
 # End zudello.scaleQueue template
 {{ end }} {{/* if $values.scaleRabbitQueue */}}
+
+
+{{- define "zudello.rabbit-liveness" -}}
+{{/*
+
+Typical liveness probes for applications.
+
+Automatically disables the checks if developmentMode is true
+
+Normal usage:
+  
+{{ include "zudello.rabbit-liveness" (list .) }}
+
+*/}}
+
+{{- $values := (index . 0).Values -}}
+{{ if not $values.developmentMode }}
+          livenessProbe:
+            exec:
+              command:
+              - python3
+              - -m
+              - zudello_rabbit.heartbeat
+            initialDelaySeconds: 5
+            periodSeconds: 60
+            timeoutSeconds: 30
+{{ end -}} {{/* if $values.developmentMode */}}
+{{- end -}} {{/* zudello.rabbit-liveness */}}
