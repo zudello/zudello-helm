@@ -82,6 +82,7 @@ metadata:
   name: {{ $ingress.name }}-ingress-{{ $values.clusterName }}
   annotations:
     alb.ingress.kubernetes.io/group.name: {{ $values.clusterName }}-elb
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
