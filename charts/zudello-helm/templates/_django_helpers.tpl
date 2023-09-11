@@ -83,15 +83,15 @@ This is just the `REPO` env at the moment
 Normal usage:
 
           env:
-{{ include "zudello.env" (list .) }}
+{{ include "zudello.django-env" (list .) }}
             - name: "AWS_STORAGE_BUCKET_NAME"
             ...
 
 */}}
 {{- $values := (index . 0).Values }}
             - name: "REPO"
-              value: {{ .Values.repo | required "repo value required" | quote }}
-{{ end -}} {{/* zudello.django-lifecycle */}}
+              value: {{ $values.repo | required "repo value required" | quote }}
+{{ end -}} {{/* zudello.django-env */}}
 
 
 {{- define "zudello.django-volume-mounts" -}}
