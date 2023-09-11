@@ -20,8 +20,8 @@ This MUST be included in all charts, using the following syntax:
   {{- end -}}
   {{- if hasSuffix "-global" $remoteClusterName -}}
     {{/* Global cluster, check this repo is global */}}
-    {{- if not .Values.global -}}
-      {{ fail "This repo MUST be global, ie, have `global: True` in values.yaml or _global.yaml" }}
+    {{- if not .Values.globalCluster -}}
+      {{ fail "This cluster is global, so the repo must have `globalCluster: True` in values.yaml or _global.yaml" }}
     {{- end -}}
   {{- end -}}
 {{- end -}}
