@@ -73,6 +73,26 @@ Normal usage:
 {{ end -}} {{/* zudello.django-lifecycle */}}
 
 
+{{- define "zudello.django-env" -}}
+{{/*
+
+Typical env for a django deployment
+
+This is just the `REPO` env at the moment
+
+Normal usage:
+
+          env:
+{{ include "zudello.env" (list .) }}
+            - name: "AWS_STORAGE_BUCKET_NAME"
+            ...
+
+*/}}
+{{- $values := (index . 0).Values }}
+            - name: "REPO"
+              value: {{ .Values.repo | required "repo value required" | quote }}
+{{ end -}} {{/* zudello.django-lifecycle */}}
+
 
 {{- define "zudello.django-volume-mounts" -}}
 {{/*
