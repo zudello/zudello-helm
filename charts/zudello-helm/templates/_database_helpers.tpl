@@ -52,6 +52,12 @@ The database-admin secret should have the following keys:
     DATABASE_HOST_READ_ONLY: 
     DATABASE_PORT:  (defaults to 3306)
 */}}
+
+{{ template "zudello.syncConfigMap" (dict 
+    "srcConfigMap" "database-certificate"
+    "destNamespace" .namespace
+) }}
+
 {{ $dbReset := (eq .dbReset "yes" )}}
 {{- $dbpassword := (lookup "v1" "Secret" .namespace .secretName) }}
 {{- if (or (not $dbpassword) $dbReset ) }}
@@ -164,10 +170,6 @@ spec:
 
 {{- else if eq $dbEngine "postgresql" -}}
 
-{{ template "zudello.syncConfigMap" (dict 
-    "srcConfigMap" "database-certificate"
-    "destNamespace" .namespace
-) }}
 
 ---
 
