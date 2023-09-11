@@ -13,9 +13,16 @@ This MUST be included in all charts, using the following syntax:
 {{ required (print "Namespace (-n) MUST be " .Values.namespace) .null }}
 {{- end -}}
 {{- if lookup "v1" "svc" "" "" }}
-{{/* Perform check only if against a real cluster, ie, not a Template */}}
-  {{- if ne .Values.clusterName (lookup "v1" "ConfigMap" "default" "cluster-data-annotations").data.clustername -}}
-  {{ required (print "Cluster Name (" .Values.clusterName ") MUST match target cluster name (" (lookup "v1" "ConfigMap" "default" "cluster-data-annotations").data.clustername ")") .null }}
+  {{- $remoteClusterName := (lookup "v1" "ConfigMap" "default" "cluster-data-annotations").data.clustername -}}
+  {{/* Perform check only if against a real cluster, ie, not a Template */}}
+  {{- if ne .Values.clusterName $remoteClusterName -}}
+    {{ fail (print "Cluster Name (" .Values.clusterName ") MUST match target cluster name (" (lookup "v1" "ConfigMap" "default" "cluster-data-annotations").data.clustername ")") }}
+  {{- end -}}
+  {{- if hasSuffix "-global" $remoteClusterName -}}
+    {{/* Global cluster, check this repo is global */}}
+    {{- if not .Values.global -}}
+      {{ fail "This repo MUST be global, ie, have `global: True` in values.yaml or _global.yaml" }}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- /* Standard checks end ====== */}}
