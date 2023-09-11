@@ -91,6 +91,10 @@ Normal usage:
 {{- $values := (index . 0).Values }}
             - name: "REPO"
               value: {{ $values.repo | required "repo value required" | quote }}
+            - name: "AWS_DEFAULT_REGION"
+              value: {{ .Values.awsDefaultRegion | required "awsDefaultRegion value required" | quote }}
+            - name: "AWS_STORAGE_BUCKET_NAME"
+              value: {{ printf "zudello-%s-shared" .Values.clusterName | quote }} ## S3 Bucket Name
             - name: "SENTRY_DSN"
               value: {{ $values.sentryDsn | required "sentryDsn value required, see: https://github.com/zudello/devops/blob/develop/docs/SentrySetup.md" | quote }}
 {{ end -}} {{/* zudello.django-env */}}
