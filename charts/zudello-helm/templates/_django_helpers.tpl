@@ -91,6 +91,8 @@ Normal usage:
 {{- $values := (index . 0).Values }}
             - name: "REPO"
               value: {{ $values.repo | required "repo value required" | quote }}
+            - name: "SENTRY_DSN"
+              value: {{ .Values.sentryDsn | required "sentryDsn value required, see: https://github.com/zudello/devops/blob/develop/docs/SentrySetup.md" | quote }}
 {{ end -}} {{/* zudello.django-env */}}
 
 
