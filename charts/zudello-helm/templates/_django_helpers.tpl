@@ -78,8 +78,6 @@ Normal usage:
 
 Typical env for a django deployment
 
-This is just the `REPO` env at the moment
-
 Normal usage:
 
           env:
@@ -97,6 +95,32 @@ Normal usage:
               value: {{ printf "zudello-%s-shared" $values.clusterName | quote }} ## S3 Bucket Name
             - name: "SENTRY_DSN"
               value: {{ $values.sentryDsn | required "sentryDsn value required, see: https://github.com/zudello/devops/blob/develop/docs/SentrySetup.md" | quote }}
+{{ end -}} {{/* zudello.django-env */}}
+
+
+{{- define "zudello.django-env-from" -}}
+{{/*
+
+Typical env from section for a django deployment
+
+Normal usage:
+
+          envFrom:
+{{ include "zudello.django-env-from" (list .) }}
+
+            - secretRef:
+                name: database
+            ...
+
+*/}}
+{{- $values := (index . 0).Values }}
+{{/* Provides: GLOBAL_CLUSTER_HOSTNAME, CLUSTER_BASE_DOMAIN_NAME, CLUSTER_NAME, CLUSTER_TIMEZONE, AWS_DEFAULT_REGION, AWS_ACCOUNT_ID, ALLOWED_CORS_HEADERS, CORS_ALLOWED_ORIGINS, CORS_ALLOWED_ORIGIN_REGEXES, CSRF_TRUSTED_ORIGINS */}}
+            - configMapRef:
+                name: cluster-details
+                optional: false
+{{/* Provides: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY */}}
+            - secretRef:
+                name: aws
 {{ end -}} {{/* zudello.django-env */}}
 
 
