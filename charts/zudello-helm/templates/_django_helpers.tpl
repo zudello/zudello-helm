@@ -1,3 +1,53 @@
+{{- define "zudello.django-liveness-readiness" -}}
+{{/*
+
+Typical set of liveness and readiness probes for django applications.
+
+Automatically disables the checks if developmentMode is true
+
+Normal usage:
+
+{{ include "zudello.django-liveness-readiness" (list .) }}
+
+If the health check URL is not at /<repo>/v1/alive/, use:
+
+{{ include "zudello.django-liveness-readiness" (list . "/team-data/v0/alive") }}
+
+If the path to use for health checks is not specified, it defaults to /<repo>/v1/alive/
+Note, "?<service>" will _always_ be appended
+
+A port can also be set as the third option, if not specified, it defaults to 8000
+
+<repo> is extracted from .Values.repo
+
+*/}}
+
+{{/* Dumb hack so index for missing values will work */}}
+{{- $forcedList := concat . (list nil nil) -}}
+{{- $values := (index $forcedList 0).Values -}}
+{{- $configPath := index $forcedList 1 -}}
+{{- $port := default "8000" (index $forcedList 2) -}}
+{{- $healthPath:= default (printf "/%s/v1/alive/" $values.repo) $configPath -}}
+{{ if not $values.developmentMode }}
+          livenessProbe:
+            httpGet:
+              path: {{ $healthPath }}?liveness
+              port: {{ $port }}
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: {{ $healthPath }}?readiness
+              port: {{ $port }}
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 3
+{{ end -}} {{/* if $values.developmentMode */}}
+{{- end -}} {{/* zudello.django-liveness-readiness */}}
+
+
+# Hack for 24 hours to allow caches to clear with the wrong spelling
 {{- define "zudello.django-liveness-rediness" -}}
 {{/*
 
@@ -45,9 +95,6 @@ A port can also be set as the third option, if not specified, it defaults to 800
             periodSeconds: 3
 {{ end -}} {{/* if $values.developmentMode */}}
 {{- end -}} {{/* zudello.django-liveness-rediness */}}
-
-
-
 
 
 {{- define "zudello.django-lifecycle" -}}
