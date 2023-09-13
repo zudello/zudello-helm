@@ -26,7 +26,7 @@ It will _not_ deploy to the default namespace
 {{ $srcNamespace := (default "default" .srcNamespace) }}
 {{- $srcConfigMapObj := (lookup "v1" "ConfigMap" $srcNamespace .srcConfigMap ) -}}
 {{ $destConfigMap := .srcConfigMap }}
-{{- if .destNamespace ne "default" -}}
+{{- if ne .destNamespace "default" -}}
 {{- if $srcConfigMapObj -}}
 ---
 apiVersion: v1
