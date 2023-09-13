@@ -20,10 +20,13 @@ srcNamespace: namespace to sync from, defaults to default
 destNamespace: the target namespace to sync to
 
 This will run on every deployment to ensure the configmap is up to date
+
+It will _not_ deploy to the default namespace
 */ -}}
 {{ $srcNamespace := (default "default" .srcNamespace) }}
 {{- $srcConfigMapObj := (lookup "v1" "ConfigMap" $srcNamespace .srcConfigMap ) -}}
 {{ $destConfigMap := .srcConfigMap }}
+{{- if .destNamespace ne "default" -}}
 {{- if $srcConfigMapObj -}}
 ---
 apiVersion: v1
@@ -39,4 +42,5 @@ data:
   {{ $key | quote }}: {{ $value | quote }}
 {{- end }}{{/* range */}}
 {{- end }}{{/* if $srcConfigMap */}}
+{{- end }}{{/* if .destNamespace */}}
 {{- end }}{{/* "zudello.syncConfigMap" */}}
