@@ -26,10 +26,15 @@ This MUST be included in all charts, using the following syntax:
   {{- end -}}
 {{- end -}}
 {{- /* Standard checks end ====== */}}
-{{- /* Always copy over the cluster-details configmap ====== */}}
+{{- /* Always copy over the cluster-details and database-certificate configmap ====== */}}
 {{ template "zudello.syncConfigMap" (dict
     "srcConfigMap" "cluster-details"
     "destNamespace" .Values.namespace
+) }}
+
+{{ template "zudello.syncConfigMap" (dict 
+    "srcConfigMap" "database-certificate"
+    "destNamespace" .namespace
 ) }}
 
 {{- end -}}
