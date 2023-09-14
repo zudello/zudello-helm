@@ -125,7 +125,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: {{ kebabcase .dbName }}-db-create
-          image: mariadb
+          image: mariadb:10
           command: ["bash"]
           args: ["-c", "cat > /tmp/script.sh << EOF\n$SCRIPT\nEOF\nbash /tmp/script.sh"]
 
