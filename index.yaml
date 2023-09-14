@@ -203,6 +203,16 @@ entries:
     version: 4.0.0
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2023-09-14T07:36:38.432768589Z"
+    description: Zudello shared helm templates
+    digest: 5a3d8b895b1366674dda107e353e2c254209cef3a27eef9af9cc8aabf1162920
+    name: zudello-helm
+    type: library
+    urls:
+    - https://github.com/zudello/zudello-helm/releases/download/zudello-helm-3.12.0/zudello-helm-3.12.0.tgz
+    version: 3.12.0
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2023-08-14T22:55:13.065390585Z"
     description: Zudello shared helm templates
     digest: 4c074f89d30ff3e1fe3ff0f646d57e213f06089aebd4c930d3da0b019ce0b651
@@ -351,4 +361,4 @@ entries:
     urls:
     - https://github.com/zudello/zudello-helm/releases/download/zudello-helm-3.0.1/zudello-helm-3.0.1.tgz
     version: 3.0.1
-generated: "2023-09-13T03:00:01.683119742Z"
+generated: "2023-09-14T07:36:38.432986891Z"
