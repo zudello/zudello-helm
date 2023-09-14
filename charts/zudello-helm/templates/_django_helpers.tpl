@@ -166,6 +166,10 @@ Normal usage:
 {{/* Provides: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY */}}
             - secretRef:
                 name: aws
+{{/*        Provides ZUDELLO_SERVICE_TOKEN, ZUDELLO_SERVICE_TOKEN_DATE */}}
+            - secretRef:
+                name: zudello-service-token
+                optional: true
 {{ end -}} {{/* zudello.django-env */}}
 
 
