@@ -224,7 +224,7 @@ spec:
                 fi
 
                 # Create the database
-                export dbname=template1
+                export dbname=postgres
                 pgexec "CREATE DATABASE ${NEW_DATABASE};"
 
                 export dbname=${NEW_DATABASE}
