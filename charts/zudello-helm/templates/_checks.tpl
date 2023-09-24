@@ -40,10 +40,10 @@ This MUST be included in all charts, using the following syntax:
 {{- end -}}
 
 
-{{ /*
+{{/*
 Template the verify a base URL, that is, it starts with a protocol, and does
 not have a trailing slash
-*/ }}
+*/}}
 {{- define "zudello.validateBaseUrl" -}}
   {{- if not (regexMatch "^(http|https)://[^/]+$" .) -}}
     {{- fail (printf "Base URL %s is invalid. It must start with http:// or https:// and not have a trailing slash" .) -}}
