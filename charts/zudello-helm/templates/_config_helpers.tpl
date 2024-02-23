@@ -80,3 +80,24 @@ metadata:
     "helm.sh/hook-weight": "-20"
 {{- end -}}
 {{- end -}}
+
+
+{{- define "zudello.getFrontEndBaseUrl" -}}
+{{/* 
+Returns the front end base url for the cluster (no trailing slash)
+
+For example:
+- {{ template "zudello.getFrontEndBaseUrl" }}
+
+*/}}
+{{- $response := (lookup "v1" "ConfigMap" "default" "cluster-details") -}}
+{{- if not (empty $response) -}}
+    {{- $frontEndUrl := $response.data.FRONT_END_BASE_URL -}}
+    {{- if empty $frontEndUrl -}}
+        {{- required "frontEndUrl not set in cluster, rerun devops helm upgrade" $frontEndUrl -}}
+    {{- end -}}
+    {{- $frontEndUrl -}}
+{{- else -}}
+    {{- "frontEndUrl dry-run not valid in production" -}}
+{{- end -}}{{/* zudello.getFrontEndBaseUrl */}}
+{{- end -}}
