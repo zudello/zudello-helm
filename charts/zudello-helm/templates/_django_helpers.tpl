@@ -88,7 +88,12 @@ Normal usage:
             - name: "AWS_STORAGE_BUCKET_NAME"
               value: {{ printf "zudello-%s-shared" $values.clusterName | quote }} ## S3 Bucket Name
             - name: "SENTRY_DSN"
+{{/* The value of sentryDsn may be "None" to disable sentry alerting */}}
+{{- if eq (upper $values.sentryDsn) "NONE"}}
+              value: ""
+{{ else }}
               value: {{ $values.sentryDsn | required "sentryDsn value required, see: https://github.com/zudello/devops/blob/develop/docs/SentrySetup.md" | quote }}
+{{ end -}}
 {{ end -}} {{/* zudello.django-env */}}
 
 
