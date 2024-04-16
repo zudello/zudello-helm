@@ -2,7 +2,7 @@
 {{/* 
 Creates an entire ingress given the name of the service, paths to match, domain etc
 
-The perferred way to do this is via an inline config, see below for more details about
+The preferred way to do this is via an inline config, see below for more details about
 each value. For example:
 
 {{ include "zudello.ingress" (list (dict 
@@ -86,6 +86,7 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/tags: "zudello:cluster-name={{ $values.clusterName }}"
 {{- if $ingress.ruleOrder }}
     alb.ingress.kubernetes.io/group.order: {{ $ingress.ruleOrder | quote }}
 {{- end }}
