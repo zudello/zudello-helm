@@ -41,7 +41,7 @@ This MUST be included in all charts, using the following syntax:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "zudello-active-git-repo-{{ .Values.repo }}"
+  name: "zudello-active-git-repo.{{ .Values.repo }}"
   namespace: default
 data:
   branch: {{ .Values.zudelloActiveRepoGitBranch | quote }}
