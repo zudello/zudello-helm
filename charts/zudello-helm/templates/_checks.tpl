@@ -37,8 +37,19 @@ This MUST be included in all charts, using the following syntax:
     "destNamespace" .namespace
 ) }}
 
-{{- end -}}
+{{- if .Values.zudelloActiveRepoGitBranch }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "zudello-active-repo-git"
+  namespace: {{ .namespace | quote }}
+data:
+  branch: {{ .Values.zudelloActiveRepoGitBranch | quote }}
+---
 
+{{ end -}}
+
+{{- end -}} {{- /* End of zudello.standardChecks */ -}}
 
 {{/*
 Template the verify a base URL, that is, it starts with a protocol, and does
