@@ -34,10 +34,11 @@ This MUST be included in all charts, using the following syntax:
 
 {{ template "zudello.syncConfigMap" (dict 
     "srcConfigMap" "database-certificate"
-    "destNamespace" .namespace
+    "destNamespace" .Values.namespace
 ) }}
 
 {{- if .Values.zudelloActiveRepoGitBranch }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
