@@ -174,7 +174,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ kebabcase .dbName }}-db-{{ kebabcase .dbUsername }}-create
+  name: {{ kebabcase .dbName }}-db-{{ kebabcase $dbUsername }}-create
   namespace: "default"
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
