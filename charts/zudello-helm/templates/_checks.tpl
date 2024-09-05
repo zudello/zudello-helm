@@ -34,11 +34,23 @@ This MUST be included in all charts, using the following syntax:
 
 {{ template "zudello.syncConfigMap" (dict 
     "srcConfigMap" "database-certificate"
-    "destNamespace" .namespace
+    "destNamespace" .Values.namespace
 ) }}
 
-{{- end -}}
+{{- if .Values.zudelloActiveRepoGitBranch }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "zudello-active-git-repo.{{ .Values.repo }}"
+  namespace: default
+data:
+  branch: {{ .Values.zudelloActiveRepoGitBranch | quote }}
+---
 
+{{ end -}}
+
+{{- end -}} {{- /* End of zudello.standardChecks */ -}}
 
 {{/*
 Template the verify a base URL, that is, it starts with a protocol, and does
