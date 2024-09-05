@@ -62,7 +62,9 @@ The database-admin secret should have the following keys:
 
 {{ $dbEngine := (default ("mysql" | b64enc) $dbAdminSecret.data.DATABASE_ENGINE) | b64dec }}
 {{ $dbUsername := (default .dbName .dbUsername ) }}
+{{ if contains "-" $dbUsername }} {{fail "invalid dbUsername set"}} {{ end }}
 {{ $dbNameKey := (default "DATABASE_NAME" .dbNameKey) }}
+{{ if contains "-" $dbNameKey }} {{fail "invalid dbNameKey set"}} {{ end }}
 {{ $dbUsernameKey := (default "DATABASE_USERNAME" .dbUsernameKey) }}
 {{ $dbPasswordKey := (default "DATABASE_PASSWORD" .dbPasswordKey) }}
 {{ $dbHostnameKey := (default "DATABASE_HOSTNAME" .dbHostnameKey) }}
@@ -172,7 +174,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ kebabcase .dbName }}-db-{{ kebabcase .dbUsername }}-create
+  name: {{ kebabcase .dbName }}-db-{{ kebabcase $dbUsername }}-create
   namespace: "default"
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
