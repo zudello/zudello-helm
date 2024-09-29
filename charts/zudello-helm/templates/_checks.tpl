@@ -13,10 +13,10 @@ This MUST be included in all charts, using the following syntax:
 {{ required (print "Namespace (-n) MUST be " .Values.namespace) .null }}
 {{- end -}}
 {{- if lookup "v1" "svc" "" "" }}
-  {{- $remoteClusterName := (lookup "v1" "ConfigMap" "default" "cluster-data-annotations").data.clustername -}}
+  {{- $remoteClusterName := (lookup "v1" "ConfigMap" "default" "cluster-details").data.CLUSTER_NAME -}}
   {{/* Perform check only if against a real cluster, ie, not a Template */}}
   {{- if ne .Values.clusterName $remoteClusterName -}}
-    {{ fail (print "Cluster Name (" .Values.clusterName ") MUST match target cluster name (" (lookup "v1" "ConfigMap" "default" "cluster-data-annotations").data.clustername ")") }}
+    {{ fail (print "Cluster Name (" .Values.clusterName ") MUST match target cluster name (" (lookup "v1" "ConfigMap" "default" "cluster-details").data.CLUSTER_NAME ")") }}
   {{- end -}}
   {{- if hasSuffix "-global" $remoteClusterName -}}
     {{/* Global cluster, check this repo is global */}}

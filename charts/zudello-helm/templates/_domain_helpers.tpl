@@ -11,13 +11,13 @@ or (with theServiceName set to "theservice" in values.ymal):
 host: {{- template "zudello.getFullDomain" .Values.theServiceName -}}
 
 */}}
-{{- $response := (lookup "v1" "ConfigMap" "default" "cluster-data-annotations") -}}
+{{- $response := (lookup "v1" "ConfigMap" "default" "cluster-details") -}}
 {{- if not (empty $response) -}}
     {{- if . -}}
         {{- if contains "." . -}}
             {{- . -}}
         {{- else -}}
-            {{- $baseDomainName := $response.data.baseDomainName -}}
+            {{- $baseDomainName := $response.data.CLUSTER_BASE_DOMAIN_NAME -}}
             {{- . }}.{{ $baseDomainName -}}
         {{- end -}}
     {{- end -}}
