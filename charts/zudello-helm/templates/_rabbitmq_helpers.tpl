@@ -7,6 +7,14 @@ https://www.rabbitmq.com/kubernetes/operator/using-topology-operator.html
 Create a new RabbitMQ queue (and associated exchange) and user for a consumer.
 Producers should _not_ use this template.
 
+Minimal config example:
+
+{{ template "zudello.createQueueAndUser" dict 
+    "namespace" .Values.namespace 
+    "queue" "team-data" 
+    "writeQueues" (list .Values.automationQueue "notification" "ingestion")
+}} 
+
 Full config for example:
 
 {{ template "zudello.createQueueAndUser" dict 
