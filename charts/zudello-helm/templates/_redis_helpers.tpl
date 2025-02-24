@@ -149,9 +149,9 @@ spec:
             - name: REDIS_PASSWORD
               value: {{ $redisPassword | quote }}
             - name: REDIS_READ_WRITE_PREFIXES
-              value: "{{ range $prefix := $readWritePrefixes }}~{{ $prefix }}: {{ end }}"
+              value: "{{ range $prefix := $readWritePrefixes }}~{{ $prefix }}:* {{ end }}"
             - name: REDIS_READ_ONLY_PREFIXES
-              value: "{{ range $prefix := $readOnlyPrefixes }}%R~{{ $prefix }}: {{ end }}"
+              value: "{{ range $prefix := $readOnlyPrefixes }}%R~{{ $prefix }}:* {{ end }}"
             - name: REDIS_MASTER_HOSTNAME
               value: {{ $redisHostname | quote }}
 {{ if $redisReset}}
@@ -171,7 +171,7 @@ spec:
                 if [ -n "$REDIS_DO_RESET" ]; then
                   redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL DELUSER ${REDIS_USERNAME}
                 fi
-                redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL SETUSER ${REDIS_USERNAME} on '>'$REDIS_PASSWORD '+@read' '+@write' ${REDIS_READ_WRITE_PREFIXES} ${REDIS_READ_ONLY_PREFIXES};
+                redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL SETUSER ${REDIS_USERNAME} on '>'$REDIS_PASSWORD '+@read' '+@write' ${REDIS_READ_WRITE_PREFIXES} ${REDIS_READ_ONLY_PREFIXES} '+ACL|WHOAMI' '+PING';
                 redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL SAVE;
 
                 redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME INFO replication | grep ^slave | awk -F '[=,:]' '{print $3 ":" $5}' | while IFS=: read -r host port; do
@@ -179,7 +179,7 @@ spec:
                     if [ -n "$REDIS_DO_RESET" ]; then
                       redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL DELUSER ${REDIS_USERNAME}
                     fi
-                    redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h "$host" -p "$port" ACL SETUSER ${REDIS_USERNAME} on '>'$REDIS_PASSWORD '+@read' '+@write' ${REDIS_READ_WRITE_PREFIXES} ${REDIS_READ_ONLY_PREFIXES};
+                    redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h "$host" -p "$port" ACL SETUSER ${REDIS_USERNAME} on '>'$REDIS_PASSWORD '+@read' '+@write' ${REDIS_READ_WRITE_PREFIXES} ${REDIS_READ_ONLY_PREFIXES} '+ACL|WHOAMI' '+PING';
                     redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h "$host" -p "$port" ACL SAVE;
                 done
 
