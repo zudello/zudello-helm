@@ -241,6 +241,8 @@ metadata:
   namespace: {{ $values.namespace | quote }}
   labels:
     app: {{ $name | quote }}
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
 spec:
   selector:
     app: {{ $name | quote }}
