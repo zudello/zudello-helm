@@ -260,7 +260,8 @@ Typical & recommended configuration for a django helm deployment. This adds extr
 deployment configuration that is common to all our django deployments.
 
 Normal usage example - placed at the end of the Deployment specification (the same
-indentation as spec.template.spec.containers, ie: it would be below `containers`):
+indentation as spec.template.spec.containers, ie: it would be alongside `containers`
+or `volumes`):
 
 {{ include "zudello.django-deployment" (list (dict "app" "team-data-web") .) }}
 
