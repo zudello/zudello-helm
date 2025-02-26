@@ -251,3 +251,33 @@ spec:
       port: {{ $servicePort }}
       targetPort: {{ $port }}
 {{- end -}} {{/* zudello.django-hpa */}}
+
+
+{{- define "zudello.django-deployment" -}}
+{{/*
+
+Typical & recommended configuration for a django helm deployment. This adds extra
+deployment configuration that is common to all our django deployments.
+
+Normal usage example - placed at the end of the Deployment specification (the same
+indentation as spec.template.spec.containers, ie: it would be below `containers`):
+
+{{ include "zudello.django-deployment" (list (dict "app" "team-data-web") .) }}
+
+Where "app" is the name of the app label. If the Namespace is needed, it will be
+extracted from .Values.namespace
+
+*/}}
+{{- $config:= (index . 0) -}}
+{{- $values := (index . 1).Values -}}
+{{- $app := $config.app -}}
+# _django_deployment.tpl zudello.django-deployment
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app: {{ $app | quote }}
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+
+{{- end -}} {{/* zudello.django-deployment */}}
