@@ -33,14 +33,14 @@ A port can also be set as the third option, if not specified, it defaults to 800
             httpGet:
               path: {{ $healthPath }}?liveness
               port: {{ $port }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             timeoutSeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: {{ $healthPath }}?readiness
               port: {{ $port }}
-            initialDelaySeconds: 5
+            initialDelaySeconds: 15
             timeoutSeconds: 5
             periodSeconds: 3
 {{ end -}} {{/* if $values.developmentMode */}}
