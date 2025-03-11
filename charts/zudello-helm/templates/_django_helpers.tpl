@@ -65,7 +65,7 @@ Normal usage:
             preStop:
               exec:
                 # Take at least 20 seconds, plus remaining request processing time to shutdown as the AWS ELB can take that long to stop sending requests to the pod
-                command: ["bash", "-c", "echo `date -Is` 'Terminating pod in 61s (lifecycle:preStop)' >> /proc/1/fd/1; sleep 61"]
+                command: ["bash", "-c", "echo `date -Is` 'Terminating pod in 55s (lifecycle:preStop)' >> /proc/1/fd/1; sleep 55"]
 {{ end -}} {{/* if $values.developmentMode */}}
 {{ end -}} {{/* zudello.django-lifecycle */}}
 
