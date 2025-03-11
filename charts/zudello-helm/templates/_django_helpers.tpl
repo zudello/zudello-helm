@@ -33,16 +33,17 @@ A port can also be set as the third option, if not specified, it defaults to 800
             httpGet:
               path: {{ $healthPath }}?liveness
               port: {{ $port }}
-            initialDelaySeconds: 15
+            initialDelaySeconds: 10
             timeoutSeconds: 5
             periodSeconds: 10
-          readinessProbe:
+          startupProbe:
             httpGet:
-              path: {{ $healthPath }}?readiness
+              path: {{ $healthPath }}?startup
               port: {{ $port }}
-            initialDelaySeconds: 15
+            initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 3
+            failureThreshold: 30
 {{ end -}} {{/* if $values.developmentMode */}}
 {{- end -}} {{/* zudello.django-liveness-readiness */}}
 
@@ -63,8 +64,8 @@ Normal usage:
           lifecycle:
             preStop:
               exec:
-                # Take at least 20 seconds to shutdown as the AWS ELB can take that long to stop sending requests to the pod
-                command: ["bash", "-c", "echo `date -Is` 'Terminating pod in 21s (lifecycle:preStop)' >> /proc/1/fd/1; sleep 21"]
+                # Take at least 20 seconds, plus remaining request processing time to shutdown as the AWS ELB can take that long to stop sending requests to the pod
+                command: ["bash", "-c", "echo `date -Is` 'Terminating pod in 61s (lifecycle:preStop)' >> /proc/1/fd/1; sleep 61"]
 {{ end -}} {{/* if $values.developmentMode */}}
 {{ end -}} {{/* zudello.django-lifecycle */}}
 
