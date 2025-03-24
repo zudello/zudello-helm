@@ -1,7 +1,9 @@
 {{- define "zudello.django-liveness-readiness" -}}
 {{/*
 
-Typical set of liveness and readiness probes for django applications.
+Typical set of liveness and startup probes for django applications.
+
+(Note: There is no actual readiness probe as this is generally not applicable to us)
 
 Automatically disables the checks if developmentMode is true
 
