@@ -1,7 +1,9 @@
 {{- define "zudello.django-liveness-readiness" -}}
 {{/*
 
-Typical set of liveness and readiness probes for django applications.
+Typical set of liveness and startup probes for django applications.
+
+(Note: There is no actual readiness probe as this is generally not applicable to us)
 
 Automatically disables the checks if developmentMode is true
 
@@ -36,13 +38,14 @@ A port can also be set as the third option, if not specified, it defaults to 800
             initialDelaySeconds: 10
             timeoutSeconds: 5
             periodSeconds: 10
-          readinessProbe:
+          startupProbe:
             httpGet:
-              path: {{ $healthPath }}?readiness
+              path: {{ $healthPath }}?startup
               port: {{ $port }}
-            initialDelaySeconds: 5
+            initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 3
+            failureThreshold: 30
 {{ end -}} {{/* if $values.developmentMode */}}
 {{- end -}} {{/* zudello.django-liveness-readiness */}}
 
@@ -63,8 +66,8 @@ Normal usage:
           lifecycle:
             preStop:
               exec:
-                # Take at least 20 seconds to shutdown as the AWS ELB can take that long to stop sending requests to the pod
-                command: ["bash", "-c", "echo `date -Is` 'Terminating pod in 21s (lifecycle:preStop)' >> /proc/1/fd/1; sleep 21"]
+                # Take at least 20 seconds, plus remaining request processing time to shutdown as the AWS ELB can take that long to stop sending requests to the pod
+                command: ["bash", "-c", "echo `date -Is` 'Terminating pod in 55s (lifecycle:preStop)' >> /proc/1/fd/1; sleep 55"]
 {{ end -}} {{/* if $values.developmentMode */}}
 {{ end -}} {{/* zudello.django-lifecycle */}}
 
@@ -260,7 +263,8 @@ Typical & recommended configuration for a django helm deployment. This adds extr
 deployment configuration that is common to all our django deployments.
 
 Normal usage example - placed at the end of the Deployment specification (the same
-indentation as spec.template.spec.containers, ie: it would be below `containers`):
+indentation as spec.template.spec.containers, ie: it would be alongside `containers`
+or `volumes`):
 
 {{ include "zudello.django-deployment" (list (dict "app" "team-data-web") .) }}
 
