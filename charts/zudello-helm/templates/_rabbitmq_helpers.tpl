@@ -315,6 +315,8 @@ spec:
 
 {{ end }} {{/* if or $events $eventsOnly */}}
 
+---
+
 {{ end }} {{/* ======================== End zudello.createQueueAndUser ======================== */}}
 
 {{ define "zudello.createProducerUser" -}}
