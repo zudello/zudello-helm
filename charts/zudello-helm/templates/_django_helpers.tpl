@@ -11,11 +11,14 @@ Normal usage:
 
 {{ include "zudello.django-liveness-readiness" (list .) }}
 
-If the health check URL is not at /<repo>/v1/alive/, use:
-
-{{ include "zudello.django-liveness-readiness" (list . "/team-data/v0/alive") }}
-
-If the path to use for health checks is not specified, it defaults to /<repo>/v1/alive/
+3 types of health check path are supported:
+  1: the default is /<repo>/v1/alive/ - used if nothing is specified
+  2: a full path, prefixed with a `/`, eg:
+    {{ include "zudello.django-liveness-readiness" (list . "/team-data/v0/alive") }}
+  3: a string of exactly "healthz", this will use the default path of /<repo>/v1/healthz/
+     additionally it will also increase the checking frequency from 10 seconds to 30 seconds,
+     and increase the timeout to 30 seconds.
+    
 Note, "?<service>" will _always_ be appended
 
 A port can also be set as the third option, if not specified, it defaults to 8000
@@ -29,21 +32,22 @@ A port can also be set as the third option, if not specified, it defaults to 800
 {{- $values := (index $forcedList 0).Values -}}
 {{- $configPath := index $forcedList 1 -}}
 {{- $port := default "8000" (index $forcedList 2) -}}
-{{- $healthPath:= default (printf "/%s/v1/alive/" $values.repo) $configPath -}}
+{{- $healthz := eq "healthz" $configPath -}}
+{{- $healthPath:= ternary (printf "/%s/v1/healthz/" $values.repo) (default (printf "/%s/v1/alive/" $values.repo) $configPath) ($healthz) -}}
 {{ if not $values.developmentMode }}
           livenessProbe:
             httpGet:
               path: {{ $healthPath }}?liveness
               port: {{ $port }}
             initialDelaySeconds: 10
-            timeoutSeconds: 5
-            periodSeconds: 10
+            timeoutSeconds: {{ if $healthz }}30{{ else }}5{{ end }}
+            periodSeconds: {{ if $healthz }}30{{ else }}10{{ end }}
           startupProbe:
             httpGet:
               path: {{ $healthPath }}?startup
               port: {{ $port }}
             initialDelaySeconds: 3
-            timeoutSeconds: 5
+            timeoutSeconds: {{ if $healthz }}30{{ else }}5{{ end }}
             periodSeconds: 3
             failureThreshold: 30
 {{ end -}} {{/* if $values.developmentMode */}}
