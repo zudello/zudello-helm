@@ -2,6 +2,7 @@
 {{/*
 For details on using these features, see:
 https://www.rabbitmq.com/kubernetes/operator/using-topology-operator.html
+https://github.com/rabbitmq/messaging-topology-operator?tab=readme-ov-file
 
 
 Create a new RabbitMQ queue (and associated exchange) and user for a consumer.
@@ -21,11 +22,11 @@ Full config for example:
     "namespace" .Values.namespace 
     "queue" "ingestion" 
     "username" "ingestion"
-    "priority" true
     "writeQueues" (list "document-worker" "team-data")
     "events" (list "created.*" "*.expenses")
     "eventsOnly" false
     "configure" ""
+    "deliveryLimit" 1000
 }} 
 
 A secret named _<username>-user-credentials_ (eg: ingestion-user-credentials) will be 
@@ -39,16 +40,19 @@ Note: the optional values below do not need to be included in the above
 namespace: The namespace where the secret etc will be created
 queue: The name of the queue (and exchange) to create
 username: Optional, the username to create, defaults to queue
-priority: Optional, if true (YAML bool), create a priority queue as well as the normal queue
-    the priority queue will be named _<queue>-priority_
 writeQueues: Optional, a list of queues username can also write to
 events: Optional, a list of events to create bindings for. For more information see:
     https://docs.google.com/document/d/1BZv1Yr3tD-uF6i5mob7tLNBxjSF-QoEcr3pr0KiMz7w/edit?usp=sharing
 eventsOnly: Optional, if true (YAML bool), only create bindings for the events, do not create
     the queue or exchange. The queue name is still required for the internal event queues to
     be created.
-configure: Optional, a regex to allow configure permissions on. If not set, no configure
+configure: Optional, a regex to allow "configure" permissions on. If not set, no configure
     permissions will be granted. Otherwise follows RabbitMQ configure regex rules.
+deliveryLimit: Optional, the maximum number of retries that are allowed for a message before it is
+    dead-lettered. Defaults to the RabbitMQ internal default (20).
+    -1 means unlimited retries.
+    This is implemented as a dedicated policy for the queue (allows it to be adjusted even 
+    after the queue is created).
 
 The produced secret will have the following keys (note values are lowercase 
 for compatibility with the rabbitmq messaging-topology-operator):
@@ -88,11 +92,11 @@ A liveness probe should also be created with:
 {{ $namespace := required "namespace required" .namespace }}
 {{ $queue := required "queue name required" .queue }}
 {{ $username := (default .queue .username) }}
-{{ $priority := (default false .priority) }}
 {{ $writeQueues := (default (list) .writeQueues)}}
 {{ $events:= (default (list) .events)}}
 {{ $eventsOnly := (default false .eventsOnly) }}
 {{ $configure := (default ("") .configure)}}
+{{ $deliveryLimit := (default 0 .deliveryLimit)}}
 {{ $host := "rabbit.rabbitmq.svc.cluster.local" }}
 {{ $port := "5672" }}
 {{ $secretName := printf "%s-user-credentials" $username }}
@@ -110,11 +114,6 @@ data:
     host: {{ $host | b64enc }}
     port: {{ $port | b64enc }}
     queue: {{ $queue | b64enc }}
-  {{- if $priority }}
-    priority: {{ "true" | b64enc }}
-  {{- else }}
-    priority: {{ "false" | b64enc }}
-  {{- end }}
 metadata:
   name: {{ $secretName }}
   namespace: {{ $namespace }}
@@ -164,7 +163,7 @@ spec:
         |(events-{{ $queue }})
       {{- end -}}$"
     configure: {{ $configure | quote }}
-    read: "^({{ $queue }})|(events-{{ $queue }}){{ if $priority }}|({{ $queue }}-priority){{ end }}$"
+    read: "^({{ $queue }})|(events-{{ $queue }})$"
   rabbitmqClusterReference:
     name: rabbit
     namespace: rabbitmq
@@ -216,39 +215,6 @@ spec:
     name: rabbit
     namespace: rabbitmq
 {{ end }} {{/* if not $eventsOnly */}}
-
-{{ if $priority }}
----
-apiVersion: rabbitmq.com/v1beta1
-kind: Queue
-metadata:
-  name: {{ $queue }}-priority
-  namespace: {{ $namespace }}
-spec:
-  name: {{ $queue }}-priority
-  type: quorum
-  autoDelete: false
-  durable: true
-  rabbitmqClusterReference:
-    name: rabbit
-    namespace: rabbitmq
-
----
-apiVersion: rabbitmq.com/v1beta1
-kind: Binding
-metadata:
-  name: {{ $queue }}-priority
-  namespace: {{ $namespace }}
-spec:
-  source: {{ $queue }}
-  destination: {{ $queue }}-priority
-  destinationType: queue
-  routingKey: {{ $queue }}-priority
-  rabbitmqClusterReference:
-    name: rabbit
-    namespace: rabbitmq
-
-{{ end }} {{/* if $priority */}}
 
 {{ if or $events $eventsOnly }}
 ---
@@ -315,6 +281,29 @@ spec:
 
 {{ end }} {{/* if or $events $eventsOnly */}}
 
+{{ if $deliveryLimit }}
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Policy
+metadata:
+  name: {{ $queue }}-policy
+  namespace: {{ $queue }}
+spec:
+  vhost: "/"
+  name: {{ $queue }}-policy
+  pattern: "^({{ $queue }}|events-{{ $queue }})$"
+  applyTo: queues
+  definition:
+    "delivery-limit": {{ $deliveryLimit }}
+    "dead-letter-exchange": "dead-letter"
+    "dead-letter-routing-key": "dead-letter"
+  priority: 100
+  rabbitmqClusterReference:
+    name: rabbit
+    namespace: rabbitmq
+
+{{ end }} {{/* if gt $deliveryLimit 0 */}}
+
 ---
 
 {{ end }} {{/* ======================== End zudello.createQueueAndUser ======================== */}}
@@ -322,8 +311,7 @@ spec:
 {{ define "zudello.createProducerUser" -}}
 {{/*
 Create a new RabbitMQ user for a producer, with write permissions to the listed queue(s)
-Producers always also get access to the _<queue>-priority_ queue if it exists, as well as
-the _events_ exchange.
+Producers always also get access to the _events_ exchange.
 
 Full config for example:
 
@@ -397,7 +385,6 @@ spec:
 {{ $writePermRegex := list -}}
 {{- range $writeQueues -}}
     {{- $writePermRegex = printf "(%s)" . | append $writePermRegex -}}
-    {{- $writePermRegex = printf "(%s-priority)" . | append $writePermRegex -}}
 {{- end }}
 
 apiVersion: rabbitmq.com/v1beta1
@@ -438,11 +425,8 @@ queueMain:
   queues:               # A list of queues to scale, and their target length
     - name: document-worker # The name of the queue to scale
       length: 5             # The target length of the queue
-      priority: true        # Optional: If true, will also scale the <queue>-priority queue, default: false
 
-Priority queues are scaled twice as fast as the default queues.
-
-To scale on event queues, use a name of "events-<queue>", and set priority to false.
+To scale on event queues, use a name of "events-<queue>".
 
 The template would then be called with:
 {{ include "zudello.scaleRabbitQueue" (list .Values.queueMain .) }}
@@ -552,15 +536,6 @@ spec:
         queueName: {{ .name | quote }}
         value: "{{ .length }}"
         mode: QueueLength
-{{- if .priority }}
-    - type: rabbitmq
-      authenticationRef:
-        name: {{ $queue.name }}
-      metadata:
-        queueName: {{ printf "%s-priority" .name | quote }}
-        value: "{{ div .length 2 }}"
-        mode: QueueLength
-{{- end }} {{/* if .priority */}}
 {{- end }}
 {{ if and (not $values.workingHours) (gt $scaleCpu 0.0) }}
     - type: cpu
