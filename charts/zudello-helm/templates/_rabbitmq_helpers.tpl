@@ -287,7 +287,7 @@ apiVersion: rabbitmq.com/v1beta1
 kind: Policy
 metadata:
   name: {{ $queue }}-policy
-  namespace: {{ $queue }}
+  namespace: {{ $namespace }}
 spec:
   vhost: "/"
   name: {{ $queue }}-policy
