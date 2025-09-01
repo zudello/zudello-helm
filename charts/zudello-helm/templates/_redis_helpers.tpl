@@ -28,6 +28,7 @@ secretName: Name of the secret to check/create in the namespace
 redisUsername: The username to create in the Redis server, must be unique across the cluster, typically will be the same as the repo name
 readWritePrefixes: List of prefixes to allow read-write access to, this must *not* include the trailing ":"
 readOnlyPrefixes: List of prefixes to allow read-only access to, this must *not* include the trailing ":"
+additionalACLs: List of additional ACLs to apply to the Redis user, see below for more details/examples
 redisURLKey: The key in the secret to store the Redis URL, default REDIS_URL (this is built up from the username, password, hostname and port etc)
 redisReadOnlyURLKey: The key in the secret to store the Redis URL for read-only Redis instances
 redisUsernameKey: The key in the secret to store the Redis username, default REDIS_USERNAME
@@ -53,6 +54,10 @@ Then mount the secret in the pod, eg:
           envFrom:
             - secretRef:
                 name: redis
+
+additionalACLs: List of additional ACLs to apply to the Redis user, these are applied after the read-write and read-only prefixes, so can be used to further restrict or grant access, for example:
+
+    "additionalACLs": (list "+EVAL" "+EVALSHA")
 
 
 */}}
@@ -85,6 +90,7 @@ Then mount the secret in the pod, eg:
 {{- $redisPort := "6379" }}
 {{- $redisReadOnlyHostname := "redis-replicas.redis.svc.cluster.local" -}}
 {{- $redisReadOnlyPort := "6379" }}
+{{- $additionalACLs := (default (list ) .additionalACLs) -}}
 
 
 {{/* Validate the prefixes */}}
@@ -154,6 +160,8 @@ spec:
               value: "{{ range $prefix := $readOnlyPrefixes }}%R~{{ $prefix }}:* {{ end }}"
             - name: REDIS_MASTER_HOSTNAME
               value: {{ $redisHostname | quote }}
+            - name: REDIS_ADDITIONAL_ACL
+              value: '{{ range $acl := $additionalACLs }}{{ $acl }} {{ end }}'
 {{ if $redisReset}}
             - name: REDIS_DO_RESET
               value: "True"
@@ -167,11 +175,16 @@ spec:
               value: |
                 set -e
 
+                echo Applying:
+                echo "    REDIS_USERNAME: ${REDIS_USERNAME}"
+                echo "    REDIS_READ_WRITE_PREFIXES: ${REDIS_READ_WRITE_PREFIXES}"
+                echo "    REDIS_READ_ONLY_PREFIXES: ${REDIS_READ_ONLY_PREFIXES}"
+                echo "    REDIS_ADDITIONAL_ACL: ${REDIS_ADDITIONAL_ACL}"
                 echo Updating: Master
                 if [ -n "$REDIS_DO_RESET" ]; then
                   redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL DELUSER ${REDIS_USERNAME}
                 fi
-                redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL SETUSER ${REDIS_USERNAME} on '>'$REDIS_PASSWORD '+@read' '+@write' ${REDIS_READ_WRITE_PREFIXES} ${REDIS_READ_ONLY_PREFIXES} '+ACL|WHOAMI' '+PING';
+                redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL SETUSER ${REDIS_USERNAME} on '>'$REDIS_PASSWORD '+@read' '+@write' ${REDIS_READ_WRITE_PREFIXES} ${REDIS_READ_ONLY_PREFIXES} '+ACL|WHOAMI' '+PING' ${REDIS_ADDITIONAL_ACL};
                 redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL SAVE;
 
                 redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME INFO replication | grep ^slave | awk -F '[=,:]' '{print $3 ":" $5}' | while IFS=: read -r host port; do
@@ -179,7 +192,7 @@ spec:
                     if [ -n "$REDIS_DO_RESET" ]; then
                       redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h $REDIS_MASTER_HOSTNAME ACL DELUSER ${REDIS_USERNAME}
                     fi
-                    redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h "$host" -p "$port" ACL SETUSER ${REDIS_USERNAME} on '>'$REDIS_PASSWORD '+@read' '+@write' ${REDIS_READ_WRITE_PREFIXES} ${REDIS_READ_ONLY_PREFIXES} '+ACL|WHOAMI' '+PING';
+                    redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h "$host" -p "$port" ACL SETUSER ${REDIS_USERNAME} on '>'$REDIS_PASSWORD '+@read' '+@write' ${REDIS_READ_WRITE_PREFIXES} ${REDIS_READ_ONLY_PREFIXES} '+ACL|WHOAMI' '+PING' ${REDIS_ADDITIONAL_ACL};
                     redis-cli -e --pass $REDIS_ADMIN_PASSWORD --no-auth-warning -h "$host" -p "$port" ACL SAVE;
                 done
 
