@@ -146,7 +146,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: {{ kebabcase $redisUsername }}-redis-user
-          image: redis
+          image: public.ecr.aws/docker/library/redis:latest
           command: ["bash"]
           args: ["-c", "cat > /tmp/script.sh << EOF\n$SCRIPT\nEOF\nbash /tmp/script.sh"]
           env:
