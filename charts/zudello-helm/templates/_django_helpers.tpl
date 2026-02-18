@@ -130,7 +130,6 @@ Normal usage:
 {{/*        Provides ZUDELLO_SERVICE_TOKEN, ZUDELLO_SERVICE_TOKEN_DATE */}}
             - secretRef:
                 name: zudello-service-token
-                optional: true
 {{ end -}} {{/* zudello.django-env */}}
 
 
