@@ -86,7 +86,7 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/ssl-policy: "ELBSecurityPolicy-TLS13-1-3-PQ-2025-09"
+    # alb.ingress.kubernetes.io/ssl-policy: "ELBSecurityPolicy-TLS13-1-3-PQ-2025-09"
     alb.ingress.kubernetes.io/tags: "zudello:cluster-name={{ $values.clusterName }}"
 {{ if eq $values.awsDefaultRegion "ap-southeast-2" }}
     alb.ingress.kubernetes.io/load-balancer-attributes: connection_logs.s3.enabled=true,connection_logs.s3.bucket=zudello-elb-logs,connection_logs.s3.prefix={{ $values.clusterName }}/connection_logs,access_logs.s3.enabled=true,access_logs.s3.bucket=zudello-elb-logs,access_logs.s3.prefix={{ $values.clusterName }}/access_logs
