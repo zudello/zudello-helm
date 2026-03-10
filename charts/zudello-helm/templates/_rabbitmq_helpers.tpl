@@ -27,6 +27,7 @@ Full config for example:
     "eventsOnly" false
     "configure" ""
     "deliveryLimit" 1000
+    "messageTtl" 60
 }} 
 
 A secret named _<username>-user-credentials_ (eg: ingestion-user-credentials) will be 
@@ -53,6 +54,9 @@ deliveryLimit: Optional, the maximum number of retries that are allowed for a me
     -1 means unlimited retries.
     This is implemented as a dedicated policy for the queue (allows it to be adjusted even 
     after the queue is created).
+messageTtl: Optional, the time-to-live (TTL) for messages in the queue, in seconds. 
+    Defaults to RabbitMQ internal default (infinite TTL). This is implemented as a 
+    dedicated policy for the queue.
 
 The produced secret will have the following keys (note values are lowercase 
 for compatibility with the rabbitmq messaging-topology-operator):
@@ -97,6 +101,7 @@ A liveness probe should also be created with:
 {{ $eventsOnly := (default false .eventsOnly) }}
 {{ $configure := (default ("") .configure)}}
 {{ $deliveryLimit := (default 0 .deliveryLimit)}}
+{{ $messageTtl := (default 0 .messageTtl) }}
 {{ $host := "rabbit.rabbitmq.svc.cluster.local" }}
 {{ $port := "5672" }}
 {{ $secretName := printf "%s-user-credentials" $username }}
@@ -281,7 +286,7 @@ spec:
 
 {{ end }} {{/* if or $events $eventsOnly */}}
 
-{{ if $deliveryLimit }}
+{{ if or $deliveryLimit $messageTtl }}
 ---
 apiVersion: rabbitmq.com/v1beta1
 kind: Policy
@@ -294,7 +299,12 @@ spec:
   pattern: "^({{ $queue }}|events-{{ $queue }})$"
   applyTo: queues
   definition:
+    {{- if $messageTtl }}
+    "message-ttl": {{ mul $messageTtl 1000 }}
+    {{- end }}
+    {{- if $deliveryLimit }}
     "delivery-limit": {{ $deliveryLimit }}
+    {{- end }}
     "dead-letter-exchange": "dead-letter"
     "dead-letter-routing-key": "dead-letter"
   priority: 100
@@ -302,7 +312,7 @@ spec:
     name: rabbit
     namespace: rabbitmq
 
-{{ end }} {{/* if gt $deliveryLimit 0 */}}
+{{ end }} {{/* if or $deliveryLimit $messageTtl */}}
 
 ---
 
