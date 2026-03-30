@@ -512,6 +512,9 @@ kind: ScaledObject
 metadata:
   name: {{ $queue.name }}
   namespace: {{ $values.namespace | quote }}
+  annotations:
+    zudello.com/minReplicas: "{{ $queue.minimumReplicas }}"
+    zudello.com/maxReplicas: "{{ $queue.maximumReplicas }}"
 spec:
   scaleTargetRef:
     name: {{ $queue.name }}
