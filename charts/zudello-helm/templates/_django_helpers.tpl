@@ -213,6 +213,9 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: {{ $name | quote }}
   namespace: {{ $values.namespace | quote }}
+  annotations:
+    zudello.com/minReplicas: "{{ $values.minimumWebReplicas }}"
+    zudello.com/maxReplicas: "{{ $values.maximumWebReplicas }}"
 spec:
   minReplicas: {{ required "minimumWebReplicas must be set" $values.minimumWebReplicas }}
   maxReplicas: {{ required "maximumWebReplicas must be set" $values.maximumWebReplicas }}
