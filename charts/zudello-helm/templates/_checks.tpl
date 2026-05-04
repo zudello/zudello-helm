@@ -39,18 +39,16 @@ This MUST be included in all charts, using the following syntax:
 ) }}
 {{ end }}
 
-{{- if .Values.zudelloActiveRepoGitBranch }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "zudello-active-git-repo.{{ .Values.repo }}"
+  name: "zudello-active-deployment.{{ .Values.repo }}"
   namespace: default
 data:
   branch: {{ .Values.zudelloActiveRepoGitBranch | quote }}
+  imageTag: {{ .Values.zudelloActiveImageTag | quote }}
 ---
-
-{{ end -}}
 
 {{- end -}} {{- /* End of zudello.standardChecks */ -}}
 
