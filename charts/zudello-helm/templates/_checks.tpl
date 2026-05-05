@@ -47,7 +47,7 @@ metadata:
   namespace: default
 data:
   branch: {{ .Values.zudelloActiveRepoGitBranch | quote }}
-  imageTag: {{ .Values.zudelloActiveImageTag | quote }}
+  imageString: {{ .Values.zudelloActiveImageString | quote }}
 ---
 
 {{- end -}} {{- /* End of zudello.standardChecks */ -}}
