@@ -101,7 +101,7 @@ metadata:
   annotations:
     "helm.sh/resource-policy": keep
     "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "-11"
+    "helm.sh/hook-weight": "-12"
 type: Opaque
 
 ---
@@ -178,7 +178,7 @@ metadata:
   namespace: "default"
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-weight": "-11"
 spec:
   activeDeadlineSeconds: 600
   ttlSecondsAfterFinished: 3600
