@@ -25,6 +25,9 @@ A port can also be set as the third option, if not specified, it defaults to 800
 
 <repo> is extracted from .Values.repo
 
+if .Values.usePodIdentity is true, then the AWS credentials will be provided via a
+secret, rather the pod is using the 2026 method of EKS Pod Identity.
+
 */}}
 
 {{/* Dumb hack so index for missing values will work */}}
@@ -124,9 +127,11 @@ Normal usage:
             - configMapRef:
                 name: cluster-details
                 optional: false
+{{if not $values.usePodIdentity }}
 {{/* Provides: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY */}}
             - secretRef:
                 name: aws
+{{ end -}}
 {{/*        Provides ZUDELLO_SERVICE_TOKEN, ZUDELLO_SERVICE_TOKEN_DATE */}}
             - secretRef:
                 name: zudello-service-token
