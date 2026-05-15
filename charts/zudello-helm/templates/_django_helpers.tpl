@@ -127,7 +127,7 @@ Normal usage:
             - configMapRef:
                 name: cluster-details
                 optional: false
-{{if $values.usePodIdentity }}
+{{if not $values.usePodIdentity }}
 {{/* Provides: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY */}}
             - secretRef:
                 name: aws
