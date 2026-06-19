@@ -19,6 +19,34 @@ For example:
 {{- end -}}
 
 
+{{- define "zudello.getClusterPhase" -}}
+{{/*
+Returns the current phase of the cluster, one of:
+- dev
+- stage
+- prod
+
+For example:
+- {{ template "zudello.getClusterPhase" . }}
+
+It does this by extracting the phase from .Values.clusterName
+*/}}
+{{- $clusterName := .Values.clusterName -}}
+{{- if hasSuffix "-global" $clusterName -}}
+    {{- $clusterName = trimSuffix "-global" $clusterName -}}
+{{- end -}}
+{{- if hasSuffix "-dev" $clusterName -}}
+    dev
+{{- else if hasSuffix "-stage" $clusterName -}}
+    stage
+{{- else if hasSuffix "-prod" $clusterName -}}
+    prod
+{{- else -}}
+    {{- required "Could not determine cluster phase from cluster name, ensure it contains one of -dev, -stage or -prod" .Values.clusterName -}}
+{{- end -}}
+{{- end -}}
+
+
 {{- define "zudello.getPinnedAZ" -}}
 {{/* 
 Returns the configured pinnedAZ for the cluster.
