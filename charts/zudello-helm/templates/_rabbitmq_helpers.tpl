@@ -126,6 +126,8 @@ metadata:
     "helm.sh/resource-policy": keep
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-11"
+  labels:
+    rabbitmq.com/topology-operator: "true"
 type: Opaque
 
 {{ end }}{{/* if not $rabbitPassword */}}
@@ -372,6 +374,8 @@ metadata:
     "helm.sh/resource-policy": keep
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-11"
+  labels:
+    rabbitmq.com/topology-operator: "true"
 type: Opaque
 
 {{ end }}{{/* if not $rabbitPassword */}}
@@ -471,6 +475,8 @@ data:
 metadata:
   name: {{ $secretName }}
   namespace: {{ $namespace }}
+  labels:
+    rabbitmq.com/topology-operator: "true"
 type: Opaque
 
 ---
