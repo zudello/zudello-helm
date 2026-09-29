@@ -88,7 +88,7 @@ metadata:
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
     alb.ingress.kubernetes.io/load-balancer-attributes: "routing.http.drop_invalid_header_fields.enabled=true,routing.http2.enabled=true"
     alb.ingress.kubernetes.io/ssl-redirect: '443'
-    alb.ingress.kubernetes.io/ssl-policy: 'ELBSecurityPolicy-FS-1-2-Res-2019-08'
+    alb.ingress.kubernetes.io/ssl-policy: 'ELBSecurityPolicy-TLS13-1-3-PQ-2025-09'
 {{- if $ingress.ruleOrder }}
     alb.ingress.kubernetes.io/group.order: {{ $ingress.ruleOrder | quote }}
 {{- end }}

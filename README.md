@@ -1,5 +1,9 @@
 # Helm Shared Files
 
+`zudello-helm-3-dev`: Special branch for `~v3` releases of zudello-helm for v2 clusters.
+
+This should be merged into `main-helm-v3` to go live - it _must not_ be merged into `develop` or `main`.
+
 ## To add to a repo
 
 Modify `Chart.yaml` to include:
